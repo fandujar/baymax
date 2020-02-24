@@ -1,0 +1,9 @@
+{
+"name": "df",
+"command": "./df-script.sh",
+"arguments": {
+	"required": ["-kh"],
+	"optional": []
+},
+"capture_response": true
+}

@@ -1,0 +1,6 @@
+{
+"name": "ls",
+"command": "scripts/plugin_a/ls-script.sh",
+"arguments": [],
+"capture_response": true
+}
