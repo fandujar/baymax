@@ -2,12 +2,17 @@ import json
 import logging
 import os
 import subprocess
-from flask import Flask
 from flask import request
 from flask import Response
-from werkzeug import ImmutableMultiDict
+from flask import Blueprint
+from werkzeug.datastructures import ImmutableMultiDict
 
-app = Flask(__name__)
+baymax_plugins = Blueprint(
+        name="baymax_plugins",
+        import_name=__name__
+    )
+
+plugins_dir = 'baymax/plugins/scripts'
 
 def exec_command(plugin: dict, arguments:ImmutableMultiDict=None):
     command_list = []
@@ -24,12 +29,12 @@ def exec_command(plugin: dict, arguments:ImmutableMultiDict=None):
                          universal_newlines=True)
     return process.stdout
 
-@app.route('/')
+@baymax_plugins.route('/plugin')
 def plugin():
     plugin_list = PluginList()
     return Response(response=str(plugin_list.value), status=200, mimetype='application/json')
 
-@app.route('/plugin/execute/<plugin_name>', methods = ['GET'])
+@baymax_plugins.route('/plugin/execute/<plugin_name>', methods = ['GET'])
 def execute_plugin(plugin_name:str):
     
     plugin_list = PluginList()
@@ -43,13 +48,13 @@ def execute_plugin(plugin_name:str):
 
     return Response(status=404, response='plugin not found', mimetype='application/json')
 
-@app.route('/plugin/refresh', methods = ['POST'])
+@baymax_plugins.route('/plugin/refresh', methods = ['POST'])
 def refresh_plugins():
-    
     data = []
-    for plugin_folder in os.listdir('scripts'):
-        with open(f'scripts/{plugin_folder}/plugin.json') as json_file:
-            data.append(json.load(json_file))
+    for plugin_folder in os.listdir(plugins_dir):
+        if os.path.isdir(f'{plugins_dir}/{plugin_folder}'):
+            with open(f'{plugins_dir}/{plugin_folder}/plugin.json') as json_file:
+                data.append(json.load(json_file))   
 
     plugin_list = PluginList(value=data)
     print(plugin_list.value)
@@ -66,7 +71,5 @@ class PluginList(object):
             PluginList.__instance.value['plugins'] = value
 
         return PluginList.__instance
-
-app.run()
 
 
