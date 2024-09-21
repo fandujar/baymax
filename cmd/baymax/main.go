@@ -7,7 +7,8 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/fandujar/baymax/pkg/services"
+	"github.com/fandujar/baymax/pkg/providers"
+	"github.com/fandujar/baymax/pkg/transport"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -52,8 +53,33 @@ func main() {
 		}
 	}()
 
-	slackClient := services.NewSlackClient("", "")
-	handler := services.RegisterHandlers(slackClient)
+	// Start NATS server
+	natsProvider, err := providers.NewNatsProvider(
+		&providers.NatsProviderConfig{},
+	)
+
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to create nats provider")
+	}
+
+	go natsProvider.RunServer()
+
+	nc, err := natsProvider.NewClient()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to create nats client")
+	}
+
+	slackProvider, err := providers.NewSlackProvider(
+		&providers.SlackProviderConfig{
+			AppToken: os.Getenv("SLACK_APP_TOKEN"),
+			BotToken: os.Getenv("SLACK_BOT_TOKEN"),
+		},
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to create slack provider")
+	}
+
+	handler := transport.RegisterSlackHandlers(slackProvider.Client, nc)
 	go func() {
 		if err := handler.RunEventLoop(); err != nil {
 			log.Fatal().Err(err).Msg("Failed to run event loop")
@@ -67,5 +93,7 @@ func main() {
 	if err := healthCheckServer.Shutdown(ctx); err != nil {
 		log.Fatal().Err(err).Msg("Failed to shutdown health check server")
 	}
+
+	natsProvider.StopServer()
 
 }
