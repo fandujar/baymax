@@ -10,6 +10,7 @@ import (
 	"github.com/fandujar/baymax/pkg/providers"
 	"github.com/fandujar/baymax/pkg/transport"
 	"github.com/go-chi/chi/v5"
+	"github.com/nats-io/nats.go"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -86,6 +87,11 @@ func main() {
 		}
 	}()
 
+	// temp handle nats messages (for testing)
+	nc.Subscribe("slack.events", func(m *nats.Msg) {
+		nc.Publish("slack.response", m.Data)
+	})
+
 	<-shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -95,5 +101,6 @@ func main() {
 	}
 
 	natsProvider.StopServer()
+	nc.Close()
 
 }

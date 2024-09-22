@@ -46,16 +46,13 @@ func (n *NatsProvider) StopServer() {
 
 func (n *NatsProvider) NewClient() (*nats.Conn, error) {
 	log.Info().Msg("creating nats client")
-	var c *nats.Conn
-	var err error
-	for i := 0; i < 5; i++ {
-		c, err = nats.Connect(n.Server.ClientURL())
-		if err == nil {
-			break
-		}
-		log.Error().Err(err).Msgf("failed to connect to nats server, attempt %d", i+1)
-		time.Sleep(1 * time.Second)
-	}
+	c, err := nats.Connect(
+		n.Options.Host,
+		nats.RetryOnFailedConnect(true),
+		nats.MaxReconnects(10),
+		nats.ReconnectWait(1*time.Second),
+	)
+
 	if err != nil {
 		return nil, err
 	}

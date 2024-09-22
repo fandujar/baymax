@@ -9,6 +9,7 @@ require (
 )
 
 require (
+	github.com/google/cel-go v0.21.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
