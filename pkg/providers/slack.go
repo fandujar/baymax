@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/rs/zerolog/log"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/socketmode"
 )
@@ -38,8 +39,10 @@ func NewSlackClient(appToken string, botToken string) (*socketmode.Client, error
 		slack.OptionAppLevelToken(appToken),
 	)
 
+	log.Debug().Msg("creating slack client")
 	client := socketmode.New(
 		api,
+		socketmode.OptionDebug(false),
 	)
 
 	return client, nil
