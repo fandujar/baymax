@@ -7,7 +7,7 @@ import (
 	"github.com/fandujar/baymax/pkg/subjects"
 	"github.com/nats-io/nats.go"
 	"github.com/rs/zerolog/log"
-	"github.com/slack-go/slack/slackevents"
+	"github.com/sashabaranov/go-openai"
 )
 
 type OpenAIHandler struct {
@@ -25,19 +25,32 @@ func (h *OpenAIHandler) RunEventLoop() {
 		// Get the message and call the OpenAI API to get a response
 		// Send the response to NATS using the subject SlackResponse
 
-		ev := &slackevents.AppMentionEvent{}
+		ev := &ThreadMessage{}
 		if err := json.Unmarshal(m.Data, ev); err != nil {
 			log.Error().Err(err).Msg("failed to unmarshal event")
 			return
 		}
 
-		resp, err := h.Service.ChatCompletion(ev.Text)
+		messages := []openai.ChatCompletionMessage{}
+		for _, message := range ev.Messages {
+			messages = append(messages, openai.ChatCompletionMessage{
+				Role:    "user",
+				Content: message.Text,
+			})
+		}
+
+		messages = append(messages, openai.ChatCompletionMessage{
+			Role:    "user",
+			Content: ev.Event.Text,
+		})
+
+		resp, err := h.Service.ChatCompletion(messages)
 		if err != nil {
 			log.Error().Err(err).Msg("failed to get chat completion")
 			return
 		}
 
-		ev.Text = resp
+		ev.Event.Text = resp
 
 		data, err := json.Marshal(ev)
 		if err != nil {

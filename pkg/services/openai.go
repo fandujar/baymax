@@ -20,17 +20,12 @@ func NewOpenAIService(p *providers.OpenAIProvider, nc *nats.Conn) *OpenAIService
 	}
 }
 
-func (s *OpenAIService) ChatCompletion(prompt string) (string, error) {
+func (s *OpenAIService) ChatCompletion(messages []openai.ChatCompletionMessage) (string, error) {
 	resp, err := s.OpenAIProvider.Client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model: "gpt-4o-mini",
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: prompt,
-				},
-			},
+			Model:    "gpt-4o-mini",
+			Messages: messages,
 		},
 	)
 
