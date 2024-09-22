@@ -23,6 +23,11 @@ func NewSlackHandler(service *services.SlackService) *SlackHandler {
 	}
 }
 
+type ThreadMessage struct {
+	Event    *slackevents.AppMentionEvent `json:"event"`
+	Messages []slack.Message              `json:"messages"`
+}
+
 func (h *SlackHandler) RunEventLoop() {
 	handler := h.RegisterSlackHandlers()
 	go func() {
@@ -33,24 +38,24 @@ func (h *SlackHandler) RunEventLoop() {
 
 	h.Service.NatsClient.Subscribe(subjects.SlackResponse, func(m *nats.Msg) {
 		log.Debug().Msgf("Received a message: %s", string(m.Data))
-		var ev *slackevents.AppMentionEvent
+		var ev *ThreadMessage
 		if err := json.Unmarshal(m.Data, &ev); err != nil {
 			log.Error().Err(err).Msg("failed to unmarshal event")
 			return
 		}
 
-		if ev.ThreadTimeStamp == "" {
+		if ev.Event.ThreadTimeStamp == "" {
 			log.Debug().Msg("thread timestamp is empty")
-			ev.ThreadTimeStamp = ev.TimeStamp
+			ev.Event.ThreadTimeStamp = ev.Event.TimeStamp
 		}
 
 		message := slack.MsgOptionCompose(
-			slack.MsgOptionText(ev.Text, false),
-			slack.MsgOptionTS(ev.ThreadTimeStamp),
+			slack.MsgOptionText(ev.Event.Text, false),
+			slack.MsgOptionTS(ev.Event.ThreadTimeStamp),
 		)
 
 		if _, _, _, err := h.Service.SlackProvider.Client.SendMessage(
-			ev.Channel,
+			ev.Event.Channel,
 			message,
 		); err != nil {
 			log.Error().Err(err).Msg("failed to send message")
@@ -101,14 +106,29 @@ func (h *SlackHandler) appMentionHandler(evt *socketmode.Event, client *socketmo
 		return
 	}
 
-	evJSON, err := json.Marshal(ev)
+	var messages []slack.Message
+	var err error
+	if ev.ThreadTimeStamp != "" {
+		// If inside a thread, get all messages in the thread to pass as context
+		messages, err = h.Service.GetAllMessagesFromThread(ev.Channel, ev.ThreadTimeStamp)
+		if err != nil {
+			log.Error().Err(err).Msg("failed to get messages from thread")
+			return
+		}
+	}
+
+	threadMessage := &ThreadMessage{
+		Event:    ev,
+		Messages: messages,
+	}
+
+	threadMessageJSON, err := json.Marshal(threadMessage)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal event")
 		return
 	}
 
-	log.Debug().Msgf("Received a message: %s", string(evJSON))
-	if err := h.Service.NatsClient.Publish(subjects.SlackEvents, evJSON); err != nil {
+	if err := h.Service.NatsClient.Publish(subjects.SlackEvents, threadMessageJSON); err != nil {
 		log.Error().Err(err).Msg("failed to publish event to NATS")
 	}
 }
