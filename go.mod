@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/rs/zerolog v1.33.0
-	github.com/slack-go/slack v0.13.1
+	github.com/slack-go/slack v0.14.0
 )
 
 require (
