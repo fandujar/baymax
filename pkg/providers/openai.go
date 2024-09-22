@@ -3,10 +3,13 @@ package providers
 import (
 	"fmt"
 	"os"
+
+	"github.com/sashabaranov/go-openai"
 )
 
 type OpenAIProvider struct {
 	*OpenAIProviderConfig
+	Client *openai.Client
 }
 
 type OpenAIProviderConfig struct {
@@ -26,5 +29,10 @@ func NewOpenAIProvider(config *OpenAIProviderConfig) (*OpenAIProvider, error) {
 		}
 	}
 
-	return &OpenAIProvider{config}, nil
+	client := openai.NewClient(config.Token)
+
+	return &OpenAIProvider{
+		OpenAIProviderConfig: config,
+		Client:               client,
+	}, nil
 }

@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/fandujar/baymax/pkg/providers"
+	"github.com/fandujar/baymax/pkg/services"
 	"github.com/fandujar/baymax/pkg/transport"
 	"github.com/go-chi/chi/v5"
-	"github.com/nats-io/nats.go"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -80,17 +80,24 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to create slack provider")
 	}
 
-	handler := transport.RegisterSlackHandlers(slackProvider.Client, nc)
-	go func() {
-		if err := handler.RunEventLoop(); err != nil {
-			log.Fatal().Err(err).Msg("Failed to run event loop")
-		}
-	}()
+	openAIProvider, err := providers.NewOpenAIProvider(
+		&providers.OpenAIProviderConfig{
+			Token: os.Getenv("OPENAI_API_KEY"),
+		},
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to create openai provider")
+	}
 
-	// temp handle nats messages (for testing)
-	nc.Subscribe("slack.events", func(m *nats.Msg) {
-		nc.Publish("slack.response", m.Data)
-	})
+	// Start Services
+	slackService := services.NewSlackService(slackProvider, nc)
+	openAIService := services.NewOpenAIService(openAIProvider, nc)
+
+	// Start Transport
+	slackHandler := transport.NewSlackHandler(slackService)
+	openAIHandler := transport.NewOpenAIHandler(openAIService)
+	slackHandler.RunEventLoop()
+	openAIHandler.RunEventLoop()
 
 	<-shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
