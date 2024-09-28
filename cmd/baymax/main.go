@@ -113,7 +113,7 @@ func main() {
 	slackHandler.RunEventLoop()
 	openAIHandler.RunEventLoop()
 	for _, plugin := range plugins {
-		plugin.RunEventLoop()
+		plugin.RunEventLoop(nc)
 	}
 
 	<-shutdown
