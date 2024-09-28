@@ -58,7 +58,7 @@ func (h *SlackHandler) RunEventLoop() {
 			ev.Event.Channel,
 			message,
 		); err != nil {
-			log.Error().Err(err).Msg("failed to send message")
+			log.Error().Err(err).Msgf("failed to send message: %s", err)
 		}
 	})
 }

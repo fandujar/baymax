@@ -44,7 +44,9 @@ func (h *OpenAIHandler) RunEventLoop() {
 			Content: ev.Event.Text,
 		})
 
-		resp, err := h.Service.ChatCompletion(messages)
+		tools := []openai.Tool{}
+
+		resp, err := h.Service.ChatCompletion(messages, tools)
 		if err != nil {
 			log.Error().Err(err).Msg("failed to get chat completion")
 			return
