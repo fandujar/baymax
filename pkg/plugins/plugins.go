@@ -9,6 +9,7 @@ type Plugin interface {
 	New(config *PluginConfig) (Plugin, error)
 	GetName() string
 	GetTools() []openai.Tool
+	RunTool(toolName string, messages []openai.ChatCompletionMessage, tools []openai.Tool) (string, error)
 	RunEventLoop()
 }
 
