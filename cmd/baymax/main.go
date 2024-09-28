@@ -7,12 +7,14 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/fandujar/baymax/pkg/plugins"
 	"github.com/fandujar/baymax/pkg/providers"
 	"github.com/fandujar/baymax/pkg/services"
 	"github.com/fandujar/baymax/pkg/transport"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/sashabaranov/go-openai"
 )
 
 func main() {
@@ -89,15 +91,30 @@ func main() {
 		log.Fatal().Err(err).Msg("Failed to create openai provider")
 	}
 
+	// Load Plugins from plugins directory
+	plugins, err := plugins.LoadPlugins()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to load plugins")
+	}
+
+	// Load Tools from plugins
+	tools := []openai.Tool{}
+	for _, plugin := range plugins {
+		tools = append(tools, plugin.GetTools()...)
+	}
+
 	// Start Services
 	slackService := services.NewSlackService(slackProvider, nc)
 	openAIService := services.NewOpenAIService(openAIProvider, nc)
 
 	// Start Transport
 	slackHandler := transport.NewSlackHandler(slackService)
-	openAIHandler := transport.NewOpenAIHandler(openAIService)
+	openAIHandler := transport.NewOpenAIHandler(openAIService, tools, plugins)
 	slackHandler.RunEventLoop()
 	openAIHandler.RunEventLoop()
+	for _, plugin := range plugins {
+		plugin.RunEventLoop()
+	}
 
 	<-shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

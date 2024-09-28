@@ -2,10 +2,13 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"os"
 
+	"github.com/fandujar/baymax/pkg/plugins"
 	"github.com/fandujar/baymax/pkg/providers"
 	"github.com/nats-io/nats.go"
+	"github.com/rs/zerolog/log"
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -21,7 +24,7 @@ func NewOpenAIService(p *providers.OpenAIProvider, nc *nats.Conn) *OpenAIService
 	}
 }
 
-func (s *OpenAIService) ChatCompletion(messages []openai.ChatCompletionMessage, tools []openai.Tool) (string, error) {
+func (s *OpenAIService) ChatCompletion(messages []openai.ChatCompletionMessage, tools []openai.Tool, plugins []plugins.Plugin) (string, error) {
 	tools = append(tools, openai.Tool{
 		Type: openai.ToolTypeFunction,
 		Function: &openai.FunctionDefinition{
@@ -44,10 +47,13 @@ func (s *OpenAIService) ChatCompletion(messages []openai.ChatCompletionMessage, 
 		return "", err
 	}
 
+	var response string
+	response = resp.Choices[0].Message.Content
+
 	if len(resp.Choices[0].Message.ToolCalls) > 0 {
 		for _, toolCall := range resp.Choices[0].Message.ToolCalls {
+			messages = append(messages, resp.Choices[0].Message)
 			if toolCall.Function.Name == "MyNameIs" {
-				messages = append(messages, resp.Choices[0].Message)
 				messages = append(messages,
 					openai.ChatCompletionMessage{
 						Role:       openai.ChatMessageRoleTool,
@@ -56,26 +62,44 @@ func (s *OpenAIService) ChatCompletion(messages []openai.ChatCompletionMessage, 
 						ToolCallID: toolCall.ID,
 					},
 				)
-
-				resp, err := s.OpenAIProvider.Client.CreateChatCompletion(
-					context.Background(),
-					openai.ChatCompletionRequest{
-						Model:    openai.GPT4oMini,
-						Messages: messages,
-						Tools:    tools,
-					},
-				)
-
-				if err != nil || len(resp.Choices) == 0 {
-					return "", err
-				}
-
-				return resp.Choices[0].Message.Content, nil
 			}
+
+			for _, plugin := range plugins {
+				if toolCall.Function.Name == plugin.GetName() {
+					log.Debug().Msgf("Running plugin %s", plugin.GetName())
+					pluginResponse, err := plugin.RunTool(toolCall.Function.Name, messages, tools)
+					if err != nil {
+						pluginResponse = fmt.Sprintf("Error running plugin %s: %s", plugin.GetName(), err)
+					}
+
+					messages = append(messages,
+						openai.ChatCompletionMessage{
+							Role:       openai.ChatMessageRoleTool,
+							Content:    pluginResponse,
+							Name:       toolCall.Function.Name,
+							ToolCallID: toolCall.ID,
+						},
+					)
+				}
+			}
+			resp, err := s.OpenAIProvider.Client.CreateChatCompletion(
+				context.Background(),
+				openai.ChatCompletionRequest{
+					Model:    openai.GPT4oMini,
+					Messages: messages,
+					Tools:    tools,
+				},
+			)
+
+			if err != nil || len(resp.Choices) == 0 {
+				return "", err
+			}
+
+			response = resp.Choices[0].Message.Content
 		}
 	}
 
-	return resp.Choices[0].Message.Content, err
+	return response, err
 
 }
 
