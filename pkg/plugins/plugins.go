@@ -2,18 +2,18 @@ package plugins
 
 import (
 	"fmt"
+	"os"
 	"plugin"
+	"strings"
 
 	"github.com/nats-io/nats.go"
 	"github.com/sashabaranov/go-openai"
 )
 
 type Plugin interface {
-	New(config *PluginConfig) (Plugin, error)
-	GetName() string
 	GetTools() []openai.Tool
-	RunTool(toolName string, messages []openai.ChatCompletionMessage, tools []openai.Tool) (string, error)
-	RunEventLoop()
+	RunTool(toolName string, parameters string, messages []openai.ChatCompletionMessage, tools []openai.Tool) (string, error)
+	RunEventLoop(natsClient *nats.Conn)
 }
 
 type PluginConfig struct {
@@ -23,7 +23,25 @@ type PluginConfig struct {
 
 func LoadPlugins() ([]Plugin, error) {
 	plugins := []Plugin{}
-	pluginFiles := []string{"plugin.so"}
+	pluginsDir := os.Getenv("BAYMAX_PLUGINS_DIR")
+	if pluginsDir == "" {
+		pluginsDir = "."
+	}
+
+	pluginFiles := []string{}
+
+	// for all .so files in the plugins directory
+	// load the plugin and append it to the pluginFiles slice
+	files, err := os.ReadDir(pluginsDir)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), ".so") {
+			pluginFiles = append(pluginFiles, fmt.Sprintf("%s/%s", pluginsDir, file.Name()))
+		}
+	}
 
 	// Load plugins from plugins directory
 	for _, pluginFile := range pluginFiles {

@@ -65,21 +65,24 @@ func (s *OpenAIService) ChatCompletion(messages []openai.ChatCompletionMessage, 
 			}
 
 			for _, plugin := range plugins {
-				if toolCall.Function.Name == plugin.GetName() {
-					log.Debug().Msgf("Running plugin %s", plugin.GetName())
-					pluginResponse, err := plugin.RunTool(toolCall.Function.Name, messages, tools)
-					if err != nil {
-						pluginResponse = fmt.Sprintf("Error running plugin %s: %s", plugin.GetName(), err)
-					}
+				for _, tool := range plugin.GetTools() {
+					if toolCall.Function.Name == tool.Function.Name {
+						log.Debug().Msgf("Running function %s", tool.Function.Name)
 
-					messages = append(messages,
-						openai.ChatCompletionMessage{
-							Role:       openai.ChatMessageRoleTool,
-							Content:    pluginResponse,
-							Name:       toolCall.Function.Name,
-							ToolCallID: toolCall.ID,
-						},
-					)
+						pluginResponse, err := plugin.RunTool(toolCall.Function.Name, toolCall.Function.Arguments, messages, tools)
+						if err != nil {
+							pluginResponse = fmt.Sprintf("Error running function %s: %s", tool.Function.Name, err)
+						}
+
+						messages = append(messages,
+							openai.ChatCompletionMessage{
+								Role:       openai.ChatMessageRoleTool,
+								Content:    pluginResponse,
+								Name:       toolCall.Function.Name,
+								ToolCallID: toolCall.ID,
+							},
+						)
+					}
 				}
 			}
 			resp, err := s.OpenAIProvider.Client.CreateChatCompletion(
