@@ -3,6 +3,7 @@ package transport
 import (
 	"encoding/json"
 
+	"github.com/fandujar/baymax/pkg/plugins"
 	"github.com/fandujar/baymax/pkg/services"
 	"github.com/fandujar/baymax/pkg/subjects"
 	"github.com/nats-io/nats.go"
@@ -12,11 +13,15 @@ import (
 
 type OpenAIHandler struct {
 	Service *services.OpenAIService
+	Tools   []openai.Tool
+	Plugins []plugins.Plugin
 }
 
-func NewOpenAIHandler(service *services.OpenAIService) *OpenAIHandler {
+func NewOpenAIHandler(service *services.OpenAIService, tools []openai.Tool, plugins []plugins.Plugin) *OpenAIHandler {
 	return &OpenAIHandler{
 		Service: service,
+		Tools:   tools,
+		Plugins: plugins,
 	}
 }
 
@@ -44,9 +49,7 @@ func (h *OpenAIHandler) RunEventLoop() {
 			Content: ev.Event.Text,
 		})
 
-		tools := []openai.Tool{}
-
-		resp, err := h.Service.ChatCompletion(messages, tools)
+		resp, err := h.Service.ChatCompletion(messages, h.Tools, h.Plugins)
 		if err != nil {
 			log.Error().Err(err).Msg("failed to get chat completion")
 			return
