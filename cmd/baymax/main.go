@@ -100,7 +100,7 @@ func main() {
 	// Load Tools from plugins
 	tools := []openai.Tool{}
 	for _, plugin := range plugins {
-		tools = append(tools, plugin.GetTools()...)
+		tools = append(tools, plugin.GetTools(log.Logger)...)
 	}
 
 	// Start Services
@@ -113,7 +113,7 @@ func main() {
 	slackHandler.RunEventLoop()
 	openAIHandler.RunEventLoop()
 	for _, plugin := range plugins {
-		plugin.RunEventLoop(nc)
+		plugin.RunEventLoop(log.Logger, nc)
 	}
 
 	<-shutdown

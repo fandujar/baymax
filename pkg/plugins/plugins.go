@@ -7,13 +7,14 @@ import (
 	"strings"
 
 	"github.com/nats-io/nats.go"
+	"github.com/rs/zerolog"
 	"github.com/sashabaranov/go-openai"
 )
 
 type Plugin interface {
-	GetTools() []openai.Tool
-	RunTool(toolName string, parameters string, messages []openai.ChatCompletionMessage, tools []openai.Tool) (string, error)
-	RunEventLoop(natsClient *nats.Conn)
+	GetTools(log zerolog.Logger) []openai.Tool
+	RunTool(log zerolog.Logger, toolName string, parameters string, messages []openai.ChatCompletionMessage, tools []openai.Tool) (string, error)
+	RunEventLoop(log zerolog.Logger, natsClient *nats.Conn)
 }
 
 type PluginConfig struct {
