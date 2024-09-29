@@ -61,12 +61,12 @@ git clone https://github.com/fandujar/baymax.git
 cd baymax
 ```
 
-### Build from Source
+#### Build from Source
 ```bash
 go build -o baymax ./cmd/baymax
 ```
 
-### Using Docker
+#### Using Docker
 Build the Docker image:
 
 ```bash
@@ -85,14 +85,15 @@ Optional environment variables:
 Set these variables in your environment or pass them when running the application.
 
 ### Usage
-Running Locally
+
+#### Running Locally
 Set the required environment variables and run:
 
 ```bash
 ./baymax
 ```
 
-### Running with Docker
+#### Running with Docker
 ```bash
 docker run -e SLACK_APP_TOKEN=your_app_token \
            -e SLACK_BOT_TOKEN=your_bot_token \
