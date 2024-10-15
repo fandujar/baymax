@@ -7,7 +7,7 @@ require (
 	github.com/nats-io/nats-server/v2 v2.10.20
 	github.com/nats-io/nats.go v1.37.0
 	github.com/rs/zerolog v1.33.0
-	github.com/sashabaranov/go-openai v1.31.0
+	github.com/sashabaranov/go-openai v1.32.2
 	github.com/slack-go/slack v0.14.0
 )
 
