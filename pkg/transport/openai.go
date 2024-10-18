@@ -38,9 +38,16 @@ func (h *OpenAIHandler) RunEventLoop() {
 
 		messages := []openai.ChatCompletionMessage{}
 		systemMessage := openai.ChatCompletionMessage{
-			Role:    "system",
-			Content: "You are a helpful assistant. Please format the response as a clearly structured message using Slack markdown formatting, bold, or italics when applicable. Respond in an objective and concise manner.Also, avoid excessive use of jargon, technical terms, or bullet points.",
+			Role: "system",
+			Content: `You are a helpful and structured assistant. Please ensure to format your response using Slack markdown:
+			- Use *bold* for important information.
+			- Use _italic_ for emphasis.
+			- Use monospace (` + "`" + `) for code or unique values.
+			- Structure your responses clearly.
+
+		Respond concisely. Avoid excessive jargon, bullet points, and unnecessary technical terms.`,
 		}
+
 		messages = append(messages, systemMessage)
 
 		for _, message := range ev.Messages {
