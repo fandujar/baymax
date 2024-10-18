@@ -37,6 +37,12 @@ func (h *OpenAIHandler) RunEventLoop() {
 		}
 
 		messages := []openai.ChatCompletionMessage{}
+		systemMessage := openai.ChatCompletionMessage{
+			Role:    "system",
+			Content: "You are a helpful assistant. Please respond in an objective and concise manner. Format the response as a Slack message that is easy to read.",
+		}
+		messages = append(messages, systemMessage)
+
 		for _, message := range ev.Messages {
 			messages = append(messages, openai.ChatCompletionMessage{
 				Role:    "user",
