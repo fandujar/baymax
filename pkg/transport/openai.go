@@ -2,6 +2,7 @@ package transport
 
 import (
 	"encoding/json"
+	"os"
 
 	"github.com/fandujar/baymax/pkg/plugins"
 	"github.com/fandujar/baymax/pkg/services"
@@ -37,18 +38,15 @@ func (h *OpenAIHandler) RunEventLoop() {
 		}
 
 		messages := []openai.ChatCompletionMessage{}
-		systemMessage := openai.ChatCompletionMessage{
-			Role: "system",
-			Content: `You are a helpful and structured assistant. Please ensure to format your response using Slack markdown:
-			- Use *bold* for important information.
-			- Use _italic_ for emphasis.
-			- Use monospace (` + "`" + `) for code or unique values.
-			- Structure your responses clearly.
 
-		Respond concisely. Avoid excessive jargon, bullet points, and unnecessary technical terms.`,
+		systemMessage := os.Getenv("OPENAI_SYSTEM_MESSAGE")
+		log.Debug().Str("system_message", systemMessage).Msg("system message")
+		if systemMessage != "" {
+			messages = append(messages, openai.ChatCompletionMessage{
+				Role:    "system",
+				Content: systemMessage,
+			})
 		}
-
-		messages = append(messages, systemMessage)
 
 		for _, message := range ev.Messages {
 			messages = append(messages, openai.ChatCompletionMessage{
