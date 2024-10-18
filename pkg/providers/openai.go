@@ -19,7 +19,10 @@ type OpenAIProviderConfig struct {
 
 func NewOpenAIProvider(config *OpenAIProviderConfig) (*OpenAIProvider, error) {
 	if config.BaseURL == "" {
-		config.BaseURL = "https://api.openai.com/v1"
+		config.BaseURL = os.Getenv("OPENAI_BASE_URL")
+		if config.BaseURL == "" {
+			config.BaseURL = "https://api.openai.com/v1"
+		}
 	}
 
 	if config.Token == "" {
@@ -29,7 +32,10 @@ func NewOpenAIProvider(config *OpenAIProviderConfig) (*OpenAIProvider, error) {
 		}
 	}
 
-	client := openai.NewClient(config.Token)
+	clientConfig := openai.DefaultConfig(config.Token)
+	clientConfig.BaseURL = config.BaseURL
+
+	client := openai.NewClientWithConfig(clientConfig)
 
 	return &OpenAIProvider{
 		OpenAIProviderConfig: config,
