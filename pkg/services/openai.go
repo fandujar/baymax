@@ -24,7 +24,18 @@ func NewOpenAIService(p *providers.OpenAIProvider, nc *nats.Conn) *OpenAIService
 	}
 }
 
+func GetModel() string {
+	model := os.Getenv("OPENAI_MODEL")
+	if model == "" {
+		model = openai.GPT4oMini
+	}
+
+	return model
+}
+
 func (s *OpenAIService) ChatCompletion(messages []openai.ChatCompletionMessage, tools []openai.Tool, plugins []plugins.Plugin) (string, error) {
+	model := GetModel()
+
 	tools = append(tools, openai.Tool{
 		Type: openai.ToolTypeFunction,
 		Function: &openai.FunctionDefinition{
@@ -37,7 +48,7 @@ func (s *OpenAIService) ChatCompletion(messages []openai.ChatCompletionMessage, 
 	resp, err := s.OpenAIProvider.Client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model:    openai.GPT4oMini,
+			Model:    model,
 			Messages: messages,
 			Tools:    tools,
 		},
@@ -89,7 +100,7 @@ func (s *OpenAIService) ChatCompletion(messages []openai.ChatCompletionMessage, 
 		resp, err := s.OpenAIProvider.Client.CreateChatCompletion(
 			context.Background(),
 			openai.ChatCompletionRequest{
-				Model:    openai.GPT4oMini,
+				Model:    model,
 				Messages: messages,
 				Tools:    tools,
 			},
