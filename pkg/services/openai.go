@@ -51,8 +51,8 @@ func (s *OpenAIService) ChatCompletion(messages []openai.ChatCompletionMessage, 
 	response = resp.Choices[0].Message.Content
 
 	if len(resp.Choices[0].Message.ToolCalls) > 0 {
+		messages = append(messages, resp.Choices[0].Message)
 		for _, toolCall := range resp.Choices[0].Message.ToolCalls {
-			messages = append(messages, resp.Choices[0].Message)
 			if toolCall.Function.Name == "MyNameIs" {
 				messages = append(messages,
 					openai.ChatCompletionMessage{
@@ -85,21 +85,21 @@ func (s *OpenAIService) ChatCompletion(messages []openai.ChatCompletionMessage, 
 					}
 				}
 			}
-			resp, err := s.OpenAIProvider.Client.CreateChatCompletion(
-				context.Background(),
-				openai.ChatCompletionRequest{
-					Model:    openai.GPT4oMini,
-					Messages: messages,
-					Tools:    tools,
-				},
-			)
-
-			if err != nil || len(resp.Choices) == 0 {
-				return "", err
-			}
-
-			response = resp.Choices[0].Message.Content
 		}
+		resp, err := s.OpenAIProvider.Client.CreateChatCompletion(
+			context.Background(),
+			openai.ChatCompletionRequest{
+				Model:    openai.GPT4oMini,
+				Messages: messages,
+				Tools:    tools,
+			},
+		)
+
+		if err != nil || len(resp.Choices) == 0 {
+			return "", err
+		}
+
+		response = resp.Choices[0].Message.Content
 	}
 
 	return response, err
