@@ -17,9 +17,27 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
+func setLogLevel() {
+	level := os.Getenv("LOG_LEVEL")
+	if level == "" {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	}
+
+	switch level {
+	case "debug":
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	case "info":
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case "warn":
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	case "error":
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	}
+}
+
 func main() {
 	// Configure the logger level and format
-	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	setLogLevel()
 	zerolog.TimeFieldFormat = time.RFC3339Nano
 
 	log.Info().Msg("starting baymax")
