@@ -79,9 +79,14 @@ Baymax requires the following environment variables:
 - `SLACK_APP_TOKEN`: Slack App-level token (starts with xapp-).
 - `SLACK_BOT_TOKEN`: Slack Bot token (starts with xoxb-).
 - `OPENAI_API_KEY`: OpenAI API key.
+
 Optional environment variables:
+- `LOG_LEVEL`: Defines de log level for the application.
 - `BAYMAX_NAME`: The name Baymax will introduce itself as (default: "Baymax").
 - `BAYMAX_PLUGINS_DIR`: Directory to load plugins from (default: current directory).
+- `OPENAI_SYSTEM_MESSAGE`: Defines a custom system role message.
+- `OPENAI_MODEL`: Defines the OpenAI Model to be used. Defaults to gpt-4o-mini.
+
 Set these variables in your environment or pass them when running the application.
 
 ### Usage
@@ -136,7 +141,7 @@ Baymax exposes health check endpoints:
 - Readiness Probe: /readiness on port 8081.
 
 ### Logging
-Baymax uses zerolog for structured logging. The log level is set to Debug by default.
+Baymax uses zerolog for structured logging. The log level is set to Info by default.
 
 ## Contributing
 Contributions are welcome! Please open an issue or submit a pull request on GitHub.
