@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/nats-io/nats-server/v2 v2.10.20
-	github.com/nats-io/nats.go v1.37.0
+	github.com/nats-io/nats.go v1.41.2
 	github.com/rs/zerolog v1.33.0
 	github.com/sashabaranov/go-openai v1.31.0
 	github.com/slack-go/slack v0.14.0
